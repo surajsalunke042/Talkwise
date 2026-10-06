@@ -1,30 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
+    <!-- Halo -->
+    <path android:pathData="M20,52a34,34 0,1 0,68 0a34,34 0,1 0,-68 0z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
+                android:centerX="54"
+                android:centerY="52"
+                android:gradientRadius="34"
+                android:type="radial">
+                <item android:color="#665EF2C2" android:offset="0.5" />
+                <item android:color="#005EF2C2" android:offset="1" />
             </gradient>
         </aapt:attr>
     </path>
+    <!-- Speech tail, tucked behind the orb: the tutor as a voice. -->
     <path
-        android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+        android:fillColor="#FF2A37A8"
+        android:pathData="M38.5,63.5L33,77L50.5,71.2z"
+        android:strokeColor="#CC5EF2C2"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.4" />
+    <!-- The orb. -->
+    <path
+        android:pathData="M34,52a20,20 0,1 0,40 0a20,20 0,1 0,-40 0z"
+        android:strokeColor="#CC5EF2C2"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.4">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="46"
+                android:centerY="43"
+                android:gradientRadius="36"
+                android:type="radial">
+                <item android:color="#FFB6FFE9" android:offset="0" />
+                <item android:color="#FF5EF2C2" android:offset="0.3" />
+                <item android:color="#FF3B4FD8" android:offset="0.72" />
+                <item android:color="#FF1B2470" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Voice level: three bars inside the orb. -->
+    <path
+        android:fillColor="#F2070A16"
+        android:pathData="M45.2,47h2.8a1.4,1.4 0,0 1,1.4 1.4v7.2a1.4,1.4 0,0 1,-1.4 1.4h-2.8a1.4,1.4 0,0 1,-1.4 -1.4v-7.2a1.4,1.4 0,0 1,1.4 -1.4zM52.6,42h2.8a1.4,1.4 0,0 1,1.4 1.4v17.2a1.4,1.4 0,0 1,-1.4 1.4h-2.8a1.4,1.4 0,0 1,-1.4 -1.4v-17.2a1.4,1.4 0,0 1,1.4 -1.4zM60,47h2.8a1.4,1.4 0,0 1,1.4 1.4v7.2a1.4,1.4 0,0 1,-1.4 1.4h-2.8a1.4,1.4 0,0 1,-1.4 -1.4v-7.2a1.4,1.4 0,0 1,1.4 -1.4z" />
 </vector>
