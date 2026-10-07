@@ -23,6 +23,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,11 +44,13 @@ import com.surajdev.talkwise.data.StreakEngine
 import com.surajdev.talkwise.data.StreakState
 import com.surajdev.talkwise.data.UserProfile
 import com.surajdev.talkwise.ui.components.CardShape
+import com.surajdev.talkwise.ui.components.GhostButton
 import com.surajdev.talkwise.ui.components.GlassCard
 import com.surajdev.talkwise.ui.components.Glyph
 import com.surajdev.talkwise.ui.components.GlyphIcon
 import com.surajdev.talkwise.ui.components.LabelRow
 import com.surajdev.talkwise.ui.components.PrimaryButton
+import com.surajdev.talkwise.ui.components.PrivacyLink
 import com.surajdev.talkwise.ui.components.TutorOrb
 import com.surajdev.talkwise.ui.components.Txt
 import com.surajdev.talkwise.ui.components.enter
@@ -63,6 +68,7 @@ fun HomeScreen(
     wordCount: Int,
     onTalk: (Scenario) -> Unit,
     onPocket: () -> Unit,
+    onDeleteData: () -> Unit,
 ) {
     val today = LocalDate.now()
     val streak = StreakEngine.visible(
@@ -158,6 +164,36 @@ fun HomeScreen(
                 )
             }
             GlyphIcon(Glyph.FORWARD, Noc.TextDim)
+        }
+
+        var confirmDelete by rememberSaveable { mutableStateOf(false) }
+        if (confirmDelete) {
+            GlassCard(Modifier.padding(horizontal = 24.dp).padding(top = 28.dp).fillMaxWidth()) {
+                Txt("Delete everything?", Type.Title)
+                Txt(
+                    "Your level, streak, saved words and session history will be erased. This can't be undone.",
+                    Type.Caption,
+                    Modifier.padding(top = 6.dp, bottom = 18.dp),
+                    color = Noc.TextDim,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    GhostButton("Delete", onClick = onDeleteData)
+                    GhostButton("Keep") { confirmDelete = false }
+                }
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 20.dp).enter(6),
+                horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+            ) {
+                PrivacyLink()
+                Txt(
+                    "Delete my data",
+                    Type.Caption,
+                    Modifier.pressable { confirmDelete = true }.padding(vertical = 8.dp),
+                    color = Noc.TextFaint,
+                )
+            }
         }
         Spacer(Modifier.height(12.dp))
     }

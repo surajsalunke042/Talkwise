@@ -24,6 +24,9 @@ import kotlinx.coroutines.CancellationException
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.time.Duration
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 enum class TutorFailure { QUOTA, NETWORK, SETUP, OTHER }
 
@@ -223,6 +226,33 @@ fun Throwable.toTutorFailure(): TutorFailure {
         else -> TutorFailure.OTHER
     }
 }
+
+/**
+ * How long until the quota that rejected this request frees up, in milliseconds.
+ * A daily quota resets at midnight Pacific time; a per-minute one names its own delay ("Please retry in 34.5s").
+ */
+fun Throwable.quotaWaitMillis(now: ZonedDateTime = ZonedDateTime.now()): Long {
+    val text = generateSequence(this) { it.cause }.take(6).joinToString(" ") { it.message.orEmpty() }.lowercase()
+    if ("perday" in text || "per day" in text) {
+        val pacific = now.withZoneSameInstant(ZoneId.of("America/Los_Angeles"))
+        return Duration.between(pacific, pacific.toLocalDate().plusDays(1).atStartOfDay(pacific.zone)).toMillis()
+    }
+    val delay = Regex("""retry in ((?:\d+(?:\.\d+)?(?:ms|h|m|s))+)""").find(text)?.groupValues?.get(1)
+        ?: return DEFAULT_QUOTA_WAIT_MS
+    val millis = Regex("""(\d+(?:\.\d+)?)(ms|h|m|s)""").findAll(delay).sumOf { part ->
+        val amount = part.groupValues[1].toDouble()
+        when (part.groupValues[2]) {
+            "h" -> amount * 3_600_000
+            "m" -> amount * 60_000
+            "s" -> amount * 1_000
+            else -> amount
+        }
+    }
+    return millis.toLong().coerceAtLeast(1_000)
+}
+
+/** Per-minute limits are the common case, and they clear within a minute. */
+private const val DEFAULT_QUOTA_WAIT_MS = 60_000L
 
 private fun Throwable.isModelMissing(): Boolean {
     val text = generateSequence(this) { it.cause }.take(6).joinToString(" ") { it.message.orEmpty() }.lowercase()

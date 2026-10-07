@@ -43,9 +43,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -251,6 +253,21 @@ fun OrbMessage(
             GhostButton(action, Modifier.padding(top = 28.dp), onAction)
         }
     }
+}
+
+/** Where the privacy policy is published. The same address goes in the Play Console listing. */
+const val PRIVACY_POLICY_URL = "https://github.com/surajsalunke042/Talkwise/blob/master/PRIVACY.md"
+
+/** Opens the privacy policy in the browser. */
+@Composable
+fun PrivacyLink(modifier: Modifier = Modifier) {
+    val uriHandler = LocalUriHandler.current
+    Txt(
+        "Privacy policy",
+        Type.Caption.copy(textDecoration = TextDecoration.Underline),
+        modifier.pressable { runCatching { uriHandler.openUri(PRIVACY_POLICY_URL) } }.padding(vertical = 8.dp),
+        color = Noc.TextFaint,
+    )
 }
 
 @Composable

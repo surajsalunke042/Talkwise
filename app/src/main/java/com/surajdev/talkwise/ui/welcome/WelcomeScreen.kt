@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.surajdev.talkwise.ui.components.LabelRow
 import com.surajdev.talkwise.ui.components.PrimaryButton
+import com.surajdev.talkwise.ui.components.PrivacyLink
 import com.surajdev.talkwise.ui.components.TutorOrb
 import com.surajdev.talkwise.ui.components.Txt
 import com.surajdev.talkwise.ui.components.enter
@@ -81,6 +82,7 @@ fun WelcomeScreen(onBegin: (goalMinutes: Int) -> Unit) {
             Modifier.padding(top = 14.dp).enter(4),
             color = Noc.TextFaint,
         )
+        PrivacyLink(Modifier.enter(4))
     }
 }
 

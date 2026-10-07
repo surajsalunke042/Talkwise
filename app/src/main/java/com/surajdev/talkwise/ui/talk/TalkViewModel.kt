@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.surajdev.talkwise.AppContainer
 import com.surajdev.talkwise.ai.TutorFailure
+import com.surajdev.talkwise.ai.quotaWaitMillis
 import com.surajdev.talkwise.ai.toTutorFailure
 import com.surajdev.talkwise.data.Band
 import com.surajdev.talkwise.data.ChatLine
@@ -27,10 +28,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.ZoneId
 
 enum class Phase { IDLE, LISTENING, THINKING, SPEAKING }
 
-data class Notice(val text: String, val canRetry: Boolean = false)
+/** [readyAt] is the wall-clock time, in epoch milliseconds, when the learner can talk again; the card counts down to it. */
+data class Notice(val text: String, val canRetry: Boolean = false, val readyAt: Long? = null)
 
 data class TalkUi(
     val scenario: Scenario = Scenarios.free,
@@ -45,6 +48,8 @@ data class TalkUi(
     val suggestions: List<String> = emptyList(),
     val notice: Notice? = null,
     val lines: List<ChatLine> = emptyList(),
+    /** Indexes into [lines] of the tutor replies the learner has reported. */
+    val reported: Set<Int> = emptySet(),
     val levelUp: Band? = null,
 )
 
@@ -158,7 +163,13 @@ class TalkViewModel(private val container: AppContainer, private val backend: Ap
         val profile = backend.users.profile.value ?: UserProfile()
         if (profile.turnsOn(LocalDate.now().toString()) >= DAILY_TURNS) {
             _ui.update {
-                it.copy(phase = Phase.IDLE, notice = Notice("That's a full day of practice. Wise will be rested and ready tomorrow."))
+                it.copy(
+                    phase = Phase.IDLE,
+                    notice = Notice(
+                        "That's a full day of practice. Wise will be rested and ready tomorrow.",
+                        readyAt = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    ),
+                )
             }
             return
         }
@@ -219,7 +230,20 @@ class TalkViewModel(private val container: AppContainer, private val backend: Ap
         _ui.update { it.copy(wordSaved = true) }
     }
 
-    fun dismissNotice() = _ui.update { it.copy(notice = null) }
+    /** Flags a tutor reply as offensive or wrong, so it can be reviewed. */
+    fun report(index: Int) {
+        val state = _ui.value
+        val line = state.lines.getOrNull(index)?.takeIf { it.fromTutor } ?: return
+        if (index in state.reported) return
+        backend.users.reportReply(
+            reply = line.text,
+            prompt = state.lines.take(index).lastOrNull { !it.fromTutor }?.text.orEmpty(),
+            scenarioId = state.scenario.id,
+        )
+        _ui.update { it.copy(reported = it.reported + index) }
+    }
+
+    fun dismissNotice() =_ui.update { it.copy(notice = null) }
 
     fun dismissLevelUp() = _ui.update { it.copy(levelUp = null) }
 
@@ -310,9 +334,13 @@ class TalkViewModel(private val container: AppContainer, private val backend: Ap
     }
 
     private fun Exception.toNotice(): Notice = when (toTutorFailure()) {
-        TutorFailure.QUOTA -> Notice("Wise is catching a breath after a busy spell. Try again in a minute.", canRetry = true)
+        TutorFailure.QUOTA -> Notice(
+            "Wise is catching a breath after a busy spell.",
+            canRetry = true,
+            readyAt = System.currentTimeMillis() + quotaWaitMillis(),
+        )
         TutorFailure.NETWORK -> Notice("The connection dropped. Check your internet and try again.", canRetry = true)
-        TutorFailure.SETUP -> Notice("The AI service turned this app away. Check that Firebase AI Logic is enabled and App Check is set up.", canRetry = true)
+        TutorFailure.SETUP -> Notice("Wise can't be reached right now. Please try again a little later.", canRetry = true)
         TutorFailure.OTHER -> Notice("That reply got lost on the way. Try again.", canRetry = true)
     }
 
@@ -335,4 +363,15 @@ class TalkViewModel(private val container: AppContainer, private val backend: Ap
         /** Keeps one learner from using up the shared free quota. */
         const val DAILY_TURNS = 60
     }
+}
+
+/** A wait in plain words, rounded up so the learner never comes back too early: "42 seconds", "5 minutes", "3 hours 12 minutes". */
+fun waitText(millis: Long): String {
+    fun count(n: Long, unit: String) = "$n $unit${if (n == 1L) "" else "s"}"
+    val seconds = (millis.coerceAtLeast(0) + 999) / 1000
+    if (seconds < 60) return count(seconds, "second")
+    val minutes = (seconds + 59) / 60
+    if (minutes < 60) return count(minutes, "minute")
+    val hours = count(minutes / 60, "hour")
+    return if (minutes % 60 == 0L) hours else "$hours ${count(minutes % 60, "minute")}"
 }

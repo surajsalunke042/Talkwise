@@ -2,8 +2,6 @@
 
 **Learn English by talking.** Talkwise is an Android app where you practise spoken English with Wise, an AI conversation partner that finds your level and grows with you.
 
-<!-- Add the Play Store badge and screenshots here once the listing is live. -->
-
 ## Features
 
 - **Real conversation practice.** Speak or type, and Wise answers out loud, like a patient partner who always has time.
@@ -27,6 +25,9 @@
 - Your level, streak, daily progress and saved words are stored in Cloud Firestore under your anonymous ID, and only that ID can read or write them (see [`firestore.rules`](firestore.rules)).
 - What you say is converted to text by the speech recognition service on your device. The text of the conversation is sent to Google's Gemini models through Firebase AI Logic to produce Wise's replies.
 - The microphone is used only while you are in a conversation in voice mode.
+- You can report any reply from Wise, and erase everything stored about you with **Delete my data** on the home screen.
+
+The full policy is in [`PRIVACY.md`](PRIVACY.md).
 
 ## Tech stack
 
@@ -51,14 +52,6 @@ The app needs a Firebase project to talk to. Without one it still builds, and sh
 ./gradlew :app:assembleDebug        # build the debug APK
 ./gradlew :app:testDebugUnitTest    # run the unit tests
 ```
-
-### Configuration
-
-| Setting | Where | Purpose |
-| --- | --- | --- |
-| `tutor_model` | Firebase Remote Config (string) | Gemini model used by the tutor. Falls back to the built-in default when unset. |
-| `DAILY_TURNS` | `TalkViewModel` | Conversation turns each learner can take per day (60). |
-| App Check | Firebase console | Release builds use Play Integrity. Debug builds use the debug provider, which prints its token to Logcat under `DebugAppCheckProvider`. |
 
 ## Project layout
 

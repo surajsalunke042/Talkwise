@@ -102,6 +102,7 @@ fun AppRoot(container: AppContainer) {
                         screen = Screen.TALK
                     },
                     onPocket = { screen = Screen.POCKET },
+                    onDeleteData = appVm::deleteData,
                 )
             }
             Stage.TALK -> TalkScreen(

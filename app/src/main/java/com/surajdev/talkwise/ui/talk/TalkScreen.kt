@@ -54,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -209,6 +210,11 @@ fun TalkScreen(vm: TalkViewModel, onEnd: () -> Unit) {
                     Txt(text, Type.Utterance, Modifier.fillMaxWidth(), align = TextAlign.Center)
                 }
 
+                val replyIndex = ui.lines.indexOfLast { it.fromTutor }
+                AnimatedVisibility(ui.phase != Phase.THINKING, enter = fadeIn(tween(400, 300)), exit = fadeOut(tween(120))) {
+                    ReportLink(replyIndex in ui.reported, Modifier.padding(top = 6.dp)) { vm.report(replyIndex) }
+                }
+
                 AnimatedVisibility(ui.word != null && ui.phase != Phase.THINKING, enter = fadeIn(tween(400, 300)), exit = fadeOut(tween(120))) {
                     ui.word?.let { WordChip(it, ui.wordSaved, vm::saveWord) }
                 }
@@ -255,7 +261,7 @@ fun TalkScreen(vm: TalkViewModel, onEnd: () -> Unit) {
             enter = fadeIn(tween(200)) + slideInVertically(spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessMediumLow)) { it / 3 },
             exit = fadeOut(tween(180)) + slideOutVertically(tween(240)) { it / 3 },
         ) {
-            Transcript(ui.lines) { showTranscript = false }
+            Transcript(ui.lines, ui.reported, vm::report) { showTranscript = false }
         }
     }
 }
@@ -351,12 +357,43 @@ private fun NoticeCard(notice: Notice, onRetry: () -> Unit, onDismiss: () -> Uni
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Counts down to the moment the learner can talk again; "Try again" waits for it.
+        val remaining by produceState(notice.readyAt?.let { it - System.currentTimeMillis() } ?: 0L, notice.readyAt) {
+            val readyAt = notice.readyAt ?: return@produceState
+            while (true) {
+                value = readyAt - System.currentTimeMillis()
+                if (value <= 0L) break
+                delay(1000)
+            }
+        }
+        val waiting = remaining > 0L
         Txt(notice.text, Type.Body, color = Noc.Text, align = TextAlign.Center)
+        if (notice.readyAt != null) {
+            Txt(
+                if (waiting) "You can talk again in ${waitText(remaining)}." else "Wise is ready again.",
+                Type.BodyStrong,
+                Modifier.padding(top = 8.dp),
+                color = Noc.Accent,
+                align = TextAlign.Center,
+            )
+        }
         Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (notice.canRetry) GhostButton("Try again", onClick = onRetry)
-            GhostButton(if (notice.canRetry) "Dismiss" else "Okay", onClick = onDismiss)
+            val retry = notice.canRetry && !waiting
+            if (retry) GhostButton("Try again", onClick = onRetry)
+            GhostButton(if (retry) "Dismiss" else "Okay", onClick = onDismiss)
         }
     }
+}
+
+/** Lets the learner flag a reply from Wise that is offensive or wrong. */
+@Composable
+private fun ReportLink(reported: Boolean, modifier: Modifier = Modifier, onReport: () -> Unit) {
+    Txt(
+        if (reported) "Reported. Thank you." else "Report this reply",
+        Type.Caption,
+        modifier.pressable(enabled = !reported, onClick = onReport).padding(vertical = 8.dp),
+        color = Noc.TextFaint,
+    )
 }
 
 @Composable
@@ -492,7 +529,7 @@ private fun TextDock(busy: Boolean, soundOn: Boolean, onSend: (String) -> Unit, 
 
 /** The whole conversation as a quiet script, for looking back. */
 @Composable
-private fun Transcript(lines: List<ChatLine>, onClose: () -> Unit) {
+private fun Transcript(lines: List<ChatLine>, reported: Set<Int>, onReport: (Int) -> Unit, onClose: () -> Unit) {
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = (lines.size - 1).coerceAtLeast(0))
     Column(Modifier.fillMaxSize().background(Noc.Bg).safeDrawingPadding()) {
         Row(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -504,13 +541,14 @@ private fun Transcript(lines: List<ChatLine>, onClose: () -> Unit) {
             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
-            itemsIndexed(lines) { _, line ->
+            itemsIndexed(lines) { index, line ->
                 Column {
                     Txt(if (line.fromTutor) "WISE" else "YOU", Type.Label, color = if (line.fromTutor) Noc.Accent else Noc.TextFaint)
                     Txt(line.text, Type.Body, Modifier.padding(top = 6.dp), color = if (line.fromTutor) Noc.Text else Noc.TextDim)
                     line.correction?.let {
                         Txt(it.corrected, Type.Body, Modifier.padding(top = 4.dp), color = Noc.Accent)
                     }
+                    if (line.fromTutor) ReportLink(index in reported) { onReport(index) }
                 }
             }
         }

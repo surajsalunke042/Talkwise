@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -117,6 +118,46 @@ class UserRepository(
 
     fun removeWord(id: String) {
         userDoc().collection("words").document(id).delete()
+    }
+
+    /** Stores a tutor reply the learner flagged, with the message that led to it, for review. */
+    fun reportReply(reply: String, prompt: String, scenarioId: String) {
+        userDoc().collection("reports").add(
+            mapOf(
+                "reply" to reply,
+                "prompt" to prompt,
+                "scenario" to scenarioId,
+                "reportedAt" to FieldValue.serverTimestamp(),
+            ),
+        )
+    }
+
+    /**
+     * Erases everything stored for this learner, then the anonymous account itself.
+     * The caller must stop [connect] first and call it again afterwards to start afresh.
+     */
+    suspend fun deleteEverything() {
+        val doc = userDoc()
+        _profile.value = null
+        _words.value = emptyList()
+        for (name in listOf("words", "days", "sessions", "reports")) {
+            while (true) {
+                val page = doc.collection(name).limit(400).get().await()
+                if (page.isEmpty) break
+                val batch = db.batch()
+                page.documents.forEach { batch.delete(it.reference) }
+                batch.commit().await()
+            }
+        }
+        doc.delete().await()
+        try {
+            auth.currentUser?.delete()?.await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // The data is already gone; signing out still leaves the old ID behind.
+            auth.signOut()
+        }
     }
 
     fun saveSession(scenarioId: String, seconds: Int, turns: Int, recap: Recap) {
