@@ -56,7 +56,7 @@ fun WelcomeScreen(onBegin: (goalMinutes: Int) -> Unit) {
         TutorOrb(Phase.IDLE, Modifier.size(300.dp).enter(0))
         Txt("Talk Wise", Type.Display, Modifier.enter(1), align = TextAlign.Center)
         Txt(
-            "Your English conversation partner. Just talk; Wise finds your level and grows with you.",
+            "Your English conversation partner. Just talk, Wise finds your level and grows with you.",
             Type.Body,
             Modifier.padding(top = 12.dp).enter(2),
             color = Noc.TextDim,

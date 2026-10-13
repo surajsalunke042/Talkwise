@@ -256,7 +256,7 @@ fun OrbMessage(
 }
 
 /** Where the privacy policy is published. The same address goes in the Play Console listing. */
-const val PRIVACY_POLICY_URL = "https://github.com/surajsalunke042/Talkwise/blob/master/PRIVACY.md"
+const val PRIVACY_POLICY_URL = "https://github.com/surajsalunke042/talkwise-privacy/blob/main/index.md"
 
 /** Opens the privacy policy in the browser. */
 @Composable
